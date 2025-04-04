@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda de Eventos da Igreja</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+        /* Reset e estilos base */
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Estilos para o cabeçalho */
+        .header {
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 2rem 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Estilos para as abas principais */
+        .tab-container {
+            background: white;
+            border-radius: 1rem;
+            padding: 0.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-button {
+            transition: all 0.3s ease;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+        }
+
+        .tab-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .active-tab {
+            background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilos para o seletor de dia */
+        .day-selector {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .day-selector select {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+            border: none;
+            background: transparent;
+            padding: 0.5rem 1rem;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Estilos para as abas de categoria */
+        .category-tabs-container {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .category-tab {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            margin: 0 0.25rem;
+        }
+
+        .category-tab:hover {
+            background: rgba(44, 82, 130, 0.1);
+        }
+
+        .category-tab.active {
+            background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilos para os cards de evento */
+        .event-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-card h4 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem;
+            color: #1a365d;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-time {
+            background: linear-gradient(135deg, #4299e1 0%, #2b6cb0 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 500;
+        }
+
+        /* Estilos para a notificação */
+        .notification {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #2c5282;
+        }
+
+        .notification h3 {
+            font-family: 'Playfair Display', serif;
+            color: #1a365d;
+        }
+
+        /* Estilos para datas */
+        .date-section h3 {
+            font-family: 'Playfair Display', serif;
+            color: #1a365d;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(44, 82, 130, 0.1);
+        }
+
+        /* Responsividade */
+        @media (max-width: 640px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                padding: 1.5rem 0;
+                border-radius: 0 0 1.5rem 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .event-card {
+                padding: 1rem;
+            }
+        }
+
+        /* Estilos para o sino de notificação */
+        .notification-bell {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .notification-bell:hover {
+            transform: scale(1.1);
+        }
+
+        .notification-bell.ringing {
+            animation: ring 0.5s ease-in-out;
+        }
+
+        @keyframes ring {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(15deg); }
+            50% { transform: rotate(-15deg); }
+            75% { transform: rotate(15deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* Estilos para o popup de notificação */
+        .notification-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-width: 90%;
+            width: 400px;
+            display: none;
+        }
+
+        .notification-popup.show {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -60%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        .notification-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .notification-overlay.show {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container">
+        <header class="header text-center">
+            <h1>Agenda da Igreja</h1>
+            <p>Programação semanal de atividades e eventos</p>
+            <div class="notification-bell absolute top-4 right-4">
+                <button id="notification-bell" class="relative">
+                    <i class="fas fa-bell text-white text-2xl"></i>
+                    <span id="notification-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                </button>
+            </div>
+        </header>
+        
+        <!-- Abas principais -->
+        <div class="flex justify-center mb-6">
+            <div class="tab-container inline-flex rounded-lg">
+                <button id="events-tab" class="tab-button px-6 py-3 text-sm font-medium rounded-lg active-tab" aria-current="page">
+                    <i class="fas fa-calendar-alt mr-2"></i>Eventos
+                </button>
+                <button id="rehearsals-tab" class="tab-button px-6 py-3 text-sm font-medium rounded-lg">
+                    <i class="fas fa-music mr-2"></i>Ensaios
+                </button>
+            </div>
+        </div>
+        
+        <div id="events-section">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
+                <div class="w-full max-w-xs">
+                    <div class="day-selector">
+                        <select id="day-filter" class="w-full">
+                            <option value="all">Todos os dias</option>
+                            <option value="0">Domingo</option>
+                            <option value="1">Segunda-feira</option>
+                            <option value="2">Terça-feira</option>
+                            <option value="3">Quarta-feira</option>
+                            <option value="4">Quinta-feira</option>
+                            <option value="5">Sexta-feira</option>
+                            <option value="6">Sábado</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="category-tabs-container">
+                <div class="category-tabs-scroll">
+                    <div id="category-tabs" class="flex space-x-2">
+                        <!-- Categories will be loaded here dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+            <div id="events-container" class="relative min-h-64">
+                <!-- Event cards will be inserted here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup de notificação -->
+    <div id="notification-overlay" class="notification-overlay"></div>
+    <div id="notification-popup" class="notification-popup">
+        <div class="flex justify-between items-start mb-4">
+            <h3 id="popup-title" class="text-xl font-semibold text-gray-800"></h3>
+            <button id="close-popup" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="flex items-center mb-2">
+            <i id="popup-icon" class="fas mr-2 text-gray-500"></i>
+            <span id="popup-category" class="text-gray-500"></span>
+        </div>
+        <div class="flex items-center mb-4">
+            <i class="fas fa-clock mr-2 text-gray-500"></i>
+            <span id="popup-time" class="text-gray-500"></span>
+        </div>
+        <div class="flex items-center">
+            <i class="fas fa-calendar mr-2 text-gray-500"></i>
+            <span id="popup-date" class="text-gray-500"></span>
+        </div>
+    </div>
+
+    <!-- Elemento de áudio pré-carregado -->
+    <audio id="bell-sound" preload="auto" controls style="display: none;">
+        <source src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU" type="audio/wav">
+    </audio>
+
+    <script>
+        // Days of the week
+        const days = [
+            "Domingo", "Segunda-feira", "Terça-feira", 
+            "Quarta-feira", "Quinta-feira", "Sexta-feira", 
+            "Sábado"
+        ];
+        
+        // Months names
+        const months = [
+            "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+            "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+        ];
+        
+        // Current state
+        let currentDayFilter = "all";
+        let currentCategory = "all";
+        let currentTab = "events";
+        let eventsData = {};
+        let rehearsalsData = {};
+        
+        // DOM elements
+        const dayFilter = document.getElementById('day-filter');
+        const eventsTab = document.getElementById('events-tab');
+        const rehearsalsTab = document.getElementById('rehearsals-tab');
+        const eventsSection = document.getElementById('events-section');
+        const categoryTabs = document.querySelectorAll('.category-tab');
+        const eventsContainer = document.getElementById('events-container');
+        
+        // Variáveis para notificações
+        let notificationCount = 0;
+        let lastEventId = null;
+        let lastRehearsalId = null;
+        let processedEvents = new Set();
+        let processedRehearsals = new Set();
+        const notificationBell = document.getElementById('notification-bell');
+        const notificationCountElement = document.getElementById('notification-count');
+        const notificationPopup = document.getElementById('notification-popup');
+        const notificationOverlay = document.getElementById('notification-overlay');
+        const closePopupButton = document.getElementById('close-popup');
+        const bellSound = document.getElementById('bell-sound');
+        
+        // Initialize the app
+        function init() {
+            loadEvents();
+            loadRehearsals();
+            setupEventListeners();
+        }
+        
+        // Load events from Firestore
+        async function loadEvents() {
+            try {
+                console.log('Iniciando carregamento de eventos...');
+                
+                const categoriesSnapshot = await db.collection('categories').get();
+                const categories = {};
+                categoriesSnapshot.forEach(doc => {
+                    categories[doc.id] = {
+                        ...doc.data(),
+                        id: doc.id
+                    };
+                });
+
+                updateCategoryTabs(categories);
+
+                return db.collection('events')
+                    .orderBy('date')
+                    .onSnapshot((snapshot) => {
+                        console.log('Novos dados recebidos do Firestore:', snapshot.size, 'eventos');
+                        
+                        eventsData = { 'all': [] };
+                        Object.keys(categories).forEach(categoryId => {
+                            eventsData[categoryId] = [];
+                        });
+                        
+                        snapshot.forEach(doc => {
+                            const event = doc.data();
+                            const id = doc.id;
+                            
+                            const eventObj = {
+                                id,
+                                title: event.title,
+                                time: event.time,
+                                date: event.date,
+                                category: event.category,
+                                categoryName: categories[event.category]?.name || 'Desconhecida',
+                                icon: categories[event.category]?.icon || 'fa-question'
+                            };
+
+                            // Verificar se é um novo evento
+                            if (!processedEvents.has(id)) {
+                                showNotification(eventObj, 'event');
+                            }
+
+                            eventsData['all'].push(eventObj);
+                            if (event.category && eventsData[event.category]) {
+                                eventsData[event.category].push(eventObj);
+                            }
+                        });
+
+                        renderCurrentView();
+                    });
+            } catch (error) {
+                console.error('Erro ao carregar eventos:', error);
+            }
+        }
+        
+        // Load rehearsals from Firestore
+        async function loadRehearsals() {
+            try {
+                console.log('Iniciando carregamento de ensaios...');
+                
+                const categoriesSnapshot = await db.collection('categories').get();
+                const categories = {};
+                categoriesSnapshot.forEach(doc => {
+                    categories[doc.id] = {
+                        ...doc.data(),
+                        id: doc.id
+                    };
+                });
+
+                return db.collection('rehearsals')
+                    .orderBy('date')
+                    .onSnapshot((snapshot) => {
+                        console.log('Novos dados recebidos do Firestore:', snapshot.size, 'ensaios');
+                        
+                        rehearsalsData = { 'all': [] };
+                        Object.keys(categories).forEach(categoryId => {
+                            rehearsalsData[categoryId] = [];
+                        });
+                        
+                        snapshot.forEach(doc => {
+                            const rehearsal = doc.data();
+                            const id = doc.id;
+                            
+                            const rehearsalObj = {
+                                id,
+                                title: rehearsal.title,
+                                time: rehearsal.time,
+                                date: rehearsal.date,
+                                category: rehearsal.category,
+                                categoryName: categories[rehearsal.category]?.name || 'Desconhecida'
+                            };
+
+                            // Verificar se é um novo ensaio
+                            if (!processedRehearsals.has(id)) {
+                                showNotification(rehearsalObj, 'rehearsal');
+                            }
+
+                            rehearsalsData['all'].push(rehearsalObj);
+                            if (rehearsal.category && rehearsalsData[rehearsal.category]) {
+                                rehearsalsData[rehearsal.category].push(rehearsalObj);
+                            }
+                        });
+
+                        if (currentTab === "rehearsals") {
+                            renderCurrentView();
+                        }
+                    });
+            } catch (error) {
+                console.error('Erro ao carregar ensaios:', error);
+            }
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            // Event listeners para as abas principais
+            eventsTab.addEventListener('click', () => {
+                currentTab = "events";
+                eventsTab.classList.add('active-tab');
+                rehearsalsTab.classList.remove('active-tab');
+                renderCurrentView();
+            });
+            
+            rehearsalsTab.addEventListener('click', () => {
+                currentTab = "rehearsals";
+                rehearsalsTab.classList.add('active-tab');
+                eventsTab.classList.remove('active-tab');
+                renderCurrentView();
+            });
+
+            dayFilter.addEventListener('change', (e) => {
+                currentDayFilter = e.target.value;
+                console.log('Filtro de dia alterado para:', currentDayFilter);
+                renderCurrentView();
+            });
+            
+            categoryTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    console.log('Clicou na categoria:', tab.dataset.category);
+                    categoryTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentCategory = tab.dataset.category;
+                    console.log('Mudou para categoria:', currentCategory);
+                    renderCurrentView();
+                });
+            });
+            
+            categoryTabs[0].classList.add('active');
+        }
+        
+        // Update the displayed day and date
+        function updateDayDisplay(targetDate = null) {
+            let displayDate;
+            
+            if (targetDate) {
+                displayDate = new Date(targetDate);
+            } else {
+                // Encontrar a data mais próxima com eventos
+                let nextEventDate = null;
+                
+                // Verificar eventos em todas as categorias
+                Object.values(eventsData).forEach(events => {
+                    events.forEach(event => {
+                        const eventDate = new Date(event.date + 'T00:00:00');
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        
+                        // Se o evento for hoje ou no futuro
+                        if (eventDate >= today) {
+                            if (!nextEventDate || eventDate < nextEventDate) {
+                                nextEventDate = eventDate;
+                            }
+                        }
+                    });
+                });
+                
+                displayDate = nextEventDate || new Date();
+            }
+            
+            // Atualizar o dia da semana
+            currentDayIndex = displayDate.getDay();
+            const currentDay = days[currentDayIndex];
+            currentDayElement.textContent = currentDay;
+            
+            // Atualizar a data
+            const day = displayDate.getDate();
+            const month = months[displayDate.getMonth()];
+            const year = displayDate.getFullYear();
+            currentDateElement.textContent = `${day} de ${month} de ${year}`;
+
+            console.log('Atualizando display:', {
+                dia: currentDay,
+                data: `${day} de ${month} de ${year}`,
+                dataObjeto: displayDate
+            });
+        }
+        
+        // Format date to Brazilian format
+        function formatDate(dateString) {
+            const date = new Date(dateString + 'T00:00:00');
+            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+            return date.toLocaleDateString('pt-BR', options);
+        }
+        
+        // Render current view based on selected tab
+        function renderCurrentView() {
+            console.log('Renderizando view atual:', {
+                currentTab,
+                currentCategory,
+                currentDayFilter
+            });
+
+            if (currentTab === "events") {
+                renderEvents();
+            } else {
+                renderRehearsals();
+            }
+        }
+        
+        // Render events for the current category and day filter
+        function renderEvents() {
+            console.log('Renderizando eventos:', {
+                currentCategory,
+                currentDayFilter,
+                eventsData
+            });
+
+            const eventsContainer = document.getElementById('events-container');
+            eventsContainer.innerHTML = '';
+
+            if (!eventsData || !eventsData[currentCategory]) {
+                eventsContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">Nenhum evento encontrado</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let eventosDaCategoria = eventsData[currentCategory];
+
+            // Filtrar por dia da semana se não for "all"
+            if (currentDayFilter !== "all") {
+                eventosDaCategoria = eventosDaCategoria.filter(event => {
+                    const eventDate = new Date(event.date);
+                    return eventDate.getDay().toString() === currentDayFilter;
+                });
+            }
+
+            if (eventosDaCategoria.length === 0) {
+                eventsContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">Nenhum evento encontrado para este dia</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Agrupar eventos por data
+            const eventsByDate = {};
+            eventosDaCategoria.forEach(event => {
+                if (!eventsByDate[event.date]) {
+                    eventsByDate[event.date] = [];
+                }
+                eventsByDate[event.date].push(event);
+            });
+
+            // Ordenar datas
+            const sortedDates = Object.keys(eventsByDate).sort();
+
+            // Renderizar eventos agrupados por data
+            sortedDates.forEach(date => {
+                const dateSection = document.createElement('div');
+                dateSection.className = 'mb-8';
+                
+                const formattedDate = formatDate(date);
+                dateSection.innerHTML = `
+                    <h3 class="text-xl font-semibold mb-4 text-blue-600">${formattedDate}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        ${eventsByDate[date].map(event => `
+                            <div class="event-card bg-white rounded-lg shadow-md p-6 ${isEventNow(event.time) ? 'now-playing' : ''}">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="text-xl font-semibold text-gray-800">${event.title}</h4>
+                                        <div class="flex items-center mt-1">
+                                            <i class="fas ${event.icon} text-gray-500"></i>
+                                            <span class="text-gray-500 ml-1">${event.categoryName}</span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                        ${event.time}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                eventsContainer.appendChild(dateSection);
+            });
+        }
+        
+        // Render rehearsals
+        function renderRehearsals() {
+            console.log('Renderizando ensaios:', {
+                currentCategory,
+                currentDayFilter,
+                rehearsalsData
+            });
+
+            const eventsContainer = document.getElementById('events-container');
+            eventsContainer.innerHTML = '';
+
+            if (!rehearsalsData || !rehearsalsData[currentCategory]) {
+                eventsContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">Nenhum ensaio encontrado</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let ensaiosDaCategoria = rehearsalsData[currentCategory];
+
+            // Filtrar por dia da semana se não for "all"
+            if (currentDayFilter !== "all") {
+                ensaiosDaCategoria = ensaiosDaCategoria.filter(rehearsal => {
+                    const rehearsalDate = new Date(rehearsal.date);
+                    return rehearsalDate.getDay().toString() === currentDayFilter;
+                });
+            }
+
+            if (ensaiosDaCategoria.length === 0) {
+                eventsContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">Nenhum ensaio encontrado para este dia</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Agrupar ensaios por data
+            const rehearsalsByDate = {};
+            ensaiosDaCategoria.forEach(rehearsal => {
+                if (!rehearsalsByDate[rehearsal.date]) {
+                    rehearsalsByDate[rehearsal.date] = [];
+                }
+                rehearsalsByDate[rehearsal.date].push(rehearsal);
+            });
+
+            // Ordenar datas
+            const sortedDates = Object.keys(rehearsalsByDate).sort();
+
+            // Renderizar ensaios agrupados por data
+            sortedDates.forEach(date => {
+                const dateSection = document.createElement('div');
+                dateSection.className = 'mb-8';
+                
+                const formattedDate = formatDate(date);
+                dateSection.innerHTML = `
+                    <h3 class="text-xl font-semibold mb-4 text-blue-600">${formattedDate}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        ${rehearsalsByDate[date].map(rehearsal => `
+                            <div class="event-card bg-white rounded-lg shadow-md p-6">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="text-xl font-semibold text-gray-800">${rehearsal.title}</h4>
+                                        <div class="flex items-center mt-1">
+                                            <i class="fas fa-music text-gray-500"></i>
+                                            <span class="text-gray-500 ml-1">${rehearsal.categoryName}</span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                        ${rehearsal.time}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                eventsContainer.appendChild(dateSection);
+            });
+        }
+        
+        // Check if event is happening now (for styling)
+        function isEventNow(eventTime) {
+            const now = new Date();
+            const currentHours = now.getHours().toString().padStart(2, '0');
+            const currentMinutes = now.getMinutes().toString().padStart(2, '0');
+            const currentTime = `${currentHours}:${currentMinutes}`;
+            
+            return eventTime === currentTime;
+        }
+        
+        // Update category tabs
+        function updateCategoryTabs(categories) {
+            const categoryTabsContainer = document.getElementById('category-tabs');
+            categoryTabsContainer.innerHTML = '';
+
+            console.log('Atualizando abas com categorias:', categories);
+
+            // Adicionar a categoria "Todos" primeiro
+            const allTab = document.createElement('button');
+            allTab.className = 'category-tab px-3 sm:px-4 py-2 rounded-t-lg active';
+            allTab.dataset.category = 'all';
+            currentCategory = 'all'; // Definir categoria inicial como 'all'
+            allTab.innerHTML = '<i class="fas fa-church mr-2"></i>Todos';
+            categoryTabsContainer.appendChild(allTab);
+
+            // Adicionar as outras categorias
+            Object.entries(categories).forEach(([docId, category]) => {
+                console.log('Criando aba para categoria:', docId, category);
+                const tab = document.createElement('button');
+                tab.className = 'category-tab px-3 sm:px-4 py-2 rounded-t-lg';
+                tab.dataset.category = docId;
+                tab.innerHTML = `<i class="fas ${category.icon} mr-2"></i>${category.name}`;
+                categoryTabsContainer.appendChild(tab);
+            });
+
+            // Atualizar os event listeners
+            setupCategoryTabListeners();
+        }
+
+        // Set up category tab listeners
+        function setupCategoryTabListeners() {
+            const categoryTabs = document.querySelectorAll('.category-tab');
+            categoryTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    console.log('Clicou na categoria:', tab.dataset.category);
+                    categoryTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentCategory = tab.dataset.category;
+                    console.log('Mudou para categoria:', currentCategory);
+                    renderCurrentView();
+                });
+            });
+        }
+        
+        // Função para reproduzir o som do sino
+        function playBellSound() {
+            console.log('Tentando reproduzir som do sino...');
+            
+            try {
+                // Criar um contexto de áudio
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                // Configurar o oscilador para simular um sino
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // Nota A5
+                oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.1); // Nota A4
+                oscillator.frequency.setValueAtTime(220, audioContext.currentTime + 0.2); // Nota A3
+                
+                // Configurar o envelope do som
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.1);
+                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+                
+                // Conectar os nós
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // Iniciar e parar o som
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.3);
+                
+                console.log('Som do sino reproduzido com sucesso');
+            } catch (error) {
+                console.error('Erro ao reproduzir som do sino:', error);
+            }
+        }
+
+        // Função para mostrar notificação
+        function showNotification(item, type) {
+            console.log('Mostrando notificação para:', item);
+            
+            // Verificar se o item já foi processado
+            const itemId = type === 'event' ? item.id : item.id;
+            if ((type === 'event' && processedEvents.has(itemId)) || 
+                (type === 'rehearsal' && processedRehearsals.has(itemId))) {
+                console.log('Item já processado, ignorando notificação');
+                return;
+            }
+
+            // Adicionar à lista de processados
+            if (type === 'event') {
+                processedEvents.add(itemId);
+            } else {
+                processedRehearsals.add(itemId);
+            }
+
+            notificationCount++;
+            notificationCountElement.textContent = notificationCount;
+            notificationCountElement.classList.remove('hidden');
+            
+            // Animar o sino
+            notificationBell.classList.add('ringing');
+            setTimeout(() => {
+                notificationBell.classList.remove('ringing');
+            }, 1000);
+
+            // Mostrar popup
+            document.getElementById('popup-title').textContent = item.title;
+            document.getElementById('popup-category').textContent = item.categoryName;
+            document.getElementById('popup-time').textContent = item.time;
+            document.getElementById('popup-date').textContent = formatDate(item.date);
+            document.getElementById('popup-icon').className = `fas ${type === 'event' ? item.icon : 'fa-music'} mr-2 text-gray-500`;
+
+            notificationPopup.classList.add('show');
+            notificationOverlay.classList.add('show');
+
+            // Reproduzir som do sino
+            playBellSound();
+        }
+
+        // Event listeners para o popup
+        closePopupButton.addEventListener('click', () => {
+            notificationPopup.classList.remove('show');
+            notificationOverlay.classList.remove('show');
+        });
+
+        notificationOverlay.addEventListener('click', () => {
+            notificationPopup.classList.remove('show');
+            notificationOverlay.classList.remove('show');
+        });
+        
+        // Start the app
+        init();
+    </script>
+</body>
+</html>

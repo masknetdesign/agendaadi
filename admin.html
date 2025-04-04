@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área Administrativa - Agenda da Igreja</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-bold text-center mb-8">Área Administrativa</h1>
+            
+            <!-- Abas principais -->
+            <div class="flex justify-center mb-6">
+                <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1">
+                    <button id="events-tab" class="px-4 py-2 text-sm font-medium rounded-md active-tab" aria-current="page">
+                        <i class="fas fa-calendar-alt mr-2"></i>Eventos
+                    </button>
+                    <button id="rehearsals-tab" class="px-4 py-2 text-sm font-medium rounded-md">
+                        <i class="fas fa-music mr-2"></i>Ensaios
+                    </button>
+                    <button id="categories-tab" class="px-4 py-2 text-sm font-medium rounded-md">
+                        <i class="fas fa-tags mr-2"></i>Categorias
+                    </button>
+                </div>
+            </div>
+
+            <!-- Seção de Eventos -->
+            <div id="events-section" class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Adicionar Evento</h2>
+                <form id="eventForm" class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="eventTitle">Título do Evento</label>
+                        <input type="text" id="eventTitle" class="w-full p-2 border rounded" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="eventCategory">Categoria</label>
+                        <select id="eventCategory" class="w-full p-2 border rounded" required>
+                            <option value="">Selecione uma categoria</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="eventDate">Data</label>
+                        <input type="date" id="eventDate" class="w-full p-2 border rounded" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="eventTime">Horário</label>
+                        <input type="time" id="eventTime" class="w-full p-2 border rounded" required>
+                    </div>
+                    <div class="md:col-span-4">
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                            Adicionar Evento
+                        </button>
+                    </div>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Título</th>
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Categoria</th>
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Data</th>
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Horário</th>
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eventsList"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Seção de Ensaios -->
+            <div id="rehearsals-section" class="bg-white rounded-lg shadow-md p-6 hidden">
+                <h2 class="text-xl font-semibold mb-4">Adicionar Ensaio</h2>
+                <form id="rehearsal-form" class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="rehearsal-title">Título do Ensaio</label>
+                        <input type="text" id="rehearsal-title" class="w-full p-2 border rounded" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="rehearsal-category">Categoria</label>
+                        <select id="rehearsal-category" class="w-full p-2 border rounded" required>
+                            <option value="">Selecione uma categoria</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="rehearsal-date">Data</label>
+                        <input type="date" id="rehearsal-date" class="w-full p-2 border rounded" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="rehearsal-time">Horário</label>
+                        <input type="time" id="rehearsal-time" class="w-full p-2 border rounded" required>
+                    </div>
+                    <div class="md:col-span-4">
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                            Adicionar Ensaio
+                        </button>
+                    </div>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Título</th>
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Categoria</th>
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Data</th>
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Horário</th>
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rehearsals-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Seção de Categorias -->
+            <div id="categories-section" class="bg-white rounded-lg shadow-md p-6 hidden">
+                <h2 class="text-xl font-bold mb-4">Gerenciar Categorias</h2>
+                
+                <form id="categoryForm" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="categoryName">Nome da Categoria</label>
+                        <input type="text" id="categoryName" class="w-full p-2 border rounded" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="categoryIcon">
+                            Ícone (Font Awesome)
+                            <a href="https://fontawesome.com/icons" target="_blank" class="text-blue-600 text-sm ml-1">
+                                Ver ícones
+                            </a>
+                        </label>
+                        <input type="text" id="categoryIcon" class="w-full p-2 border rounded" 
+                               placeholder="Ex: fa-music" required>
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            Adicionar Categoria
+                        </button>
+                    </div>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Nome</th>
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Ícone</th>
+                                <th class="px-6 py-3 text-left text-gray-500 text-sm font-medium">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriesList"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .active-tab {
+            background-color: #3b82f6;
+            color: white;
+        }
+    </style>
+
+    <script>
+        // Estado da aplicação
+        const state = {
+            currentTab: 'events',
+            categories: new Map()
+        };
+
+        // Elementos DOM
+        const elements = {
+            tabs: {
+                events: document.getElementById('events-tab'),
+                rehearsals: document.getElementById('rehearsals-tab'),
+                categories: document.getElementById('categories-tab')
+            },
+            sections: {
+                events: document.getElementById('events-section'),
+                rehearsals: document.getElementById('rehearsals-section'),
+                categories: document.getElementById('categories-section')
+            },
+            forms: {
+                event: document.getElementById('eventForm'),
+                rehearsal: document.getElementById('rehearsal-form'),
+                category: document.getElementById('categoryForm')
+            },
+            lists: {
+                events: document.getElementById('eventsList'),
+                rehearsals: document.getElementById('rehearsals-list'),
+                categories: document.getElementById('categoriesList')
+            },
+            selects: {
+                eventCategory: document.getElementById('eventCategory'),
+                rehearsalCategory: document.getElementById('rehearsal-category')
+            }
+        };
+
+        // Funções de utilidade
+        const utils = {
+            formatDate(dateString) {
+                const date = new Date(dateString + 'T00:00:00');
+                return date.toLocaleDateString('pt-BR');
+            },
+            showError(message) {
+                alert(message);
+                console.error(message);
+            },
+            showSuccess(message) {
+                alert(message);
+                console.log(message);
+            }
+        };
+
+        // Gerenciamento de abas
+        const tabManager = {
+            switchTab(tab) {
+                state.currentTab = tab;
+                
+                // Atualizar abas
+                Object.values(elements.tabs).forEach(t => t.classList.remove('active-tab'));
+                elements.tabs[tab].classList.add('active-tab');
+                
+                // Atualizar seções
+                Object.values(elements.sections).forEach(s => s.classList.add('hidden'));
+                elements.sections[tab].classList.remove('hidden');
+            }
+        };
+
+        // Gerenciamento de categorias
+        const categoryManager = {
+            async load() {
+                try {
+                    const snapshot = await db.collection('categories').get();
+                    state.categories.clear();
+                    
+                    // Limpar selects
+                    elements.selects.eventCategory.innerHTML = '<option value="">Selecione uma categoria</option>';
+                    elements.selects.rehearsalCategory.innerHTML = '<option value="">Selecione uma categoria</option>';
+                    
+                    // Limpar lista
+                    elements.lists.categories.innerHTML = '';
+                    
+                    snapshot.forEach(doc => {
+                        const category = { id: doc.id, ...doc.data() };
+                        state.categories.set(doc.id, category);
+                        
+                        // Adicionar à tabela
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <i class="fas ${category.icon} mr-2"></i>
+                                    ${category.name}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">${category.icon}</td>
+                            <td class="px-6 py-4">
+                                <button onclick="app.deleteCategory('${category.id}')" class="text-red-600 hover:text-red-800">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        elements.lists.categories.appendChild(row);
+                        
+                        // Adicionar aos selects
+                        const option = document.createElement('option');
+                        option.value = category.id;
+                        option.textContent = category.name;
+                        elements.selects.eventCategory.appendChild(option.cloneNode(true));
+                        elements.selects.rehearsalCategory.appendChild(option);
+                    });
+                } catch (error) {
+                    utils.showError('Erro ao carregar categorias: ' + error.message);
+                }
+            },
+            
+            async add() {
+                const name = document.getElementById('categoryName').value.trim();
+                const icon = document.getElementById('categoryIcon').value.trim();
+                
+                if (!name || !icon) {
+                    utils.showError('Por favor, preencha todos os campos.');
+                    return;
+                }
+                
+                try {
+                    const docRef = await db.collection('categories').add({
+                        name,
+                        icon,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    utils.showSuccess('Categoria adicionada com sucesso!');
+                    elements.forms.category.reset();
+                    await this.load();
+                } catch (error) {
+                    utils.showError('Erro ao adicionar categoria: ' + error.message);
+                }
+            },
+            
+            async delete(id) {
+                if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
+                
+                try {
+                    await db.collection('categories').doc(id).delete();
+                    utils.showSuccess('Categoria excluída com sucesso!');
+                    await this.load();
+                } catch (error) {
+                    utils.showError('Erro ao excluir categoria: ' + error.message);
+                }
+            }
+        };
+
+        // Gerenciamento de eventos
+        const eventManager = {
+            async load() {
+                try {
+                    return db.collection('events')
+                        .orderBy('date')
+                        .onSnapshot(snapshot => {
+                            elements.lists.events.innerHTML = '';
+                            
+                            if (snapshot.empty) {
+                                elements.lists.events.innerHTML = `
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                            Nenhum evento cadastrado
+                                        </td>
+                                    </tr>
+                                `;
+                                return;
+                            }
+                            
+                            snapshot.forEach(doc => {
+                                const event = doc.data();
+                                const category = state.categories.get(event.category);
+                                
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td class="px-6 py-4">${event.title}</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <i class="fas ${category?.icon || ''} mr-2"></i>
+                                            ${category?.name || 'Desconhecida'}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">${utils.formatDate(event.date)}</td>
+                                    <td class="px-6 py-4">${event.time}</td>
+                                    <td class="px-6 py-4">
+                                        <button onclick="app.deleteEvent('${doc.id}')" class="text-red-600 hover:text-red-800">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                `;
+                                elements.lists.events.appendChild(row);
+                            });
+                        });
+                } catch (error) {
+                    utils.showError('Erro ao carregar eventos: ' + error.message);
+                }
+            },
+            
+            async add() {
+                const title = document.getElementById('eventTitle').value.trim();
+                const category = document.getElementById('eventCategory').value;
+                const date = document.getElementById('eventDate').value;
+                const time = document.getElementById('eventTime').value;
+                
+                if (!title || !category || !date || !time) {
+                    utils.showError('Por favor, preencha todos os campos.');
+                    return;
+                }
+                
+                try {
+                    await db.collection('events').add({
+                        title,
+                        category,
+                        date,
+                        time,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    utils.showSuccess('Evento adicionado com sucesso!');
+                    elements.forms.event.reset();
+                } catch (error) {
+                    utils.showError('Erro ao adicionar evento: ' + error.message);
+                }
+            },
+            
+            async delete(id) {
+                if (!confirm('Tem certeza que deseja excluir este evento?')) return;
+                
+                try {
+                    await db.collection('events').doc(id).delete();
+                    utils.showSuccess('Evento excluído com sucesso!');
+                } catch (error) {
+                    utils.showError('Erro ao excluir evento: ' + error.message);
+                }
+            }
+        };
+
+        // Gerenciamento de ensaios
+        const rehearsalManager = {
+            async load() {
+                try {
+                    return db.collection('rehearsals')
+                        .orderBy('date')
+                        .onSnapshot(snapshot => {
+                            elements.lists.rehearsals.innerHTML = '';
+                            
+                            if (snapshot.empty) {
+                                elements.lists.rehearsals.innerHTML = `
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                            Nenhum ensaio cadastrado
+                                        </td>
+                                    </tr>
+                                `;
+                                return;
+                            }
+                            
+                            snapshot.forEach(doc => {
+                                const rehearsal = doc.data();
+                                const category = state.categories.get(rehearsal.category);
+                                
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td class="px-6 py-4">${rehearsal.title}</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <i class="fas ${category?.icon || ''} mr-2"></i>
+                                            ${category?.name || 'Desconhecida'}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">${utils.formatDate(rehearsal.date)}</td>
+                                    <td class="px-6 py-4">${rehearsal.time}</td>
+                                    <td class="px-6 py-4">
+                                        <button onclick="app.deleteRehearsal('${doc.id}')" class="text-red-600 hover:text-red-800">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                `;
+                                elements.lists.rehearsals.appendChild(row);
+                            });
+                        });
+                } catch (error) {
+                    utils.showError('Erro ao carregar ensaios: ' + error.message);
+                }
+            },
+            
+            async add() {
+                const title = document.getElementById('rehearsal-title').value.trim();
+                const category = document.getElementById('rehearsal-category').value;
+                const date = document.getElementById('rehearsal-date').value;
+                const time = document.getElementById('rehearsal-time').value;
+                
+                if (!title || !category || !date || !time) {
+                    utils.showError('Por favor, preencha todos os campos.');
+                    return;
+                }
+                
+                try {
+                    await db.collection('rehearsals').add({
+                        title,
+                        category,
+                        date,
+                        time,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    utils.showSuccess('Ensaio adicionado com sucesso!');
+                    elements.forms.rehearsal.reset();
+                } catch (error) {
+                    utils.showError('Erro ao adicionar ensaio: ' + error.message);
+                }
+            },
+            
+            async delete(id) {
+                if (!confirm('Tem certeza que deseja excluir este ensaio?')) return;
+                
+                try {
+                    await db.collection('rehearsals').doc(id).delete();
+                    utils.showSuccess('Ensaio excluído com sucesso!');
+                } catch (error) {
+                    utils.showError('Erro ao excluir ensaio: ' + error.message);
+                }
+            }
+        };
+
+        // Aplicação principal
+        const app = {
+            init() {
+                this.setupEventListeners();
+                this.setupAuth();
+            },
+            
+            setupEventListeners() {
+                // Eventos de aba
+                elements.tabs.events.addEventListener('click', () => tabManager.switchTab('events'));
+                elements.tabs.rehearsals.addEventListener('click', () => tabManager.switchTab('rehearsals'));
+                elements.tabs.categories.addEventListener('click', () => tabManager.switchTab('categories'));
+                
+                // Eventos de formulário
+                elements.forms.event.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    eventManager.add();
+                });
+                
+                elements.forms.rehearsal.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    rehearsalManager.add();
+                });
+                
+                elements.forms.category.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    categoryManager.add();
+                });
+            },
+            
+            setupAuth() {
+                auth.onAuthStateChanged(user => {
+                    if (user) {
+                        console.log('Usuário autenticado:', user.email);
+                        this.loadData();
+                    } else {
+                        console.log('Usuário não autenticado, redirecionando...');
+                        window.location.href = 'login.html';
+                    }
+                });
+            },
+            
+            async loadData() {
+                await categoryManager.load();
+                eventManager.load();
+                rehearsalManager.load();
+                tabManager.switchTab(state.currentTab);
+            },
+            
+            deleteCategory(id) {
+                categoryManager.delete(id);
+            },
+            
+            deleteEvent(id) {
+                eventManager.delete(id);
+            },
+            
+            deleteRehearsal(id) {
+                rehearsalManager.delete(id);
+            }
+        };
+
+        // Inicializar aplicação
+        app.init();
+    </script>
+</body>
+</html> 
