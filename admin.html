@@ -7,7 +7,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="module">
-        import { db, auth, checkAuth, login, logout } from './firebase-config.js';
+        import { 
+            db, 
+            auth, 
+            checkAuth, 
+            login, 
+            logout,
+            getCategories,
+            addCategory,
+            deleteCategory,
+            getEvents,
+            addEvent,
+            deleteEvent,
+            getRehearsals,
+            addRehearsal,
+            deleteRehearsal
+        } from './firebase-config.js';
         
         // Torna as funções disponíveis globalmente
         window.db = db;
@@ -15,6 +30,15 @@
         window.checkAuth = checkAuth;
         window.login = login;
         window.logout = logout;
+        window.getCategories = getCategories;
+        window.addCategory = addCategory;
+        window.deleteCategory = deleteCategory;
+        window.getEvents = getEvents;
+        window.addEvent = addEvent;
+        window.deleteEvent = deleteEvent;
+        window.getRehearsals = getRehearsals;
+        window.addRehearsal = addRehearsal;
+        window.deleteRehearsal = deleteRehearsal;
     </script>
 </head>
 <body class="bg-gray-50">
@@ -275,12 +299,13 @@
         const dataManager = {
             async loadCategories() {
                 try {
-                    const querySnapshot = await db.collection('categories').get();
+                    const categories = await getCategories();
                     state.categories.clear();
-                    querySnapshot.forEach(doc => {
-                        state.categories.set(doc.id, doc.data());
+                    categories.forEach(category => {
+                        state.categories.set(category.id, category);
                     });
                     this.updateCategorySelects();
+                    this.renderCategories();
                 } catch (error) {
                     utils.showError('Erro ao carregar categorias: ' + error.message);
                 }
@@ -295,9 +320,52 @@
                 elements.selects.rehearsalCategory.innerHTML = '<option value="">Selecione uma categoria</option>' + options;
             },
 
+            renderCategories() {
+                const html = Array.from(state.categories.entries())
+                    .map(([id, category]) => `
+                        <tr>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <i class="fas ${category.icon} mr-2"></i>
+                                    ${category.name}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">${category.icon}</td>
+                            <td class="px-6 py-4">
+                                <button onclick="dataManager.deleteCategory('${id}')" class="text-red-600 hover:text-red-900">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                elements.lists.categories.innerHTML = html;
+            },
+
+            async addCategory(categoryData) {
+                try {
+                    await addCategory(categoryData);
+                    utils.showSuccess('Categoria adicionada com sucesso!');
+                    await this.loadCategories();
+                } catch (error) {
+                    utils.showError('Erro ao adicionar categoria: ' + error.message);
+                }
+            },
+
+            async deleteCategory(categoryId) {
+                if (confirm('Tem certeza que deseja excluir esta categoria?')) {
+                    try {
+                        await deleteCategory(categoryId);
+                        utils.showSuccess('Categoria excluída com sucesso!');
+                        await this.loadCategories();
+                    } catch (error) {
+                        utils.showError('Erro ao excluir categoria: ' + error.message);
+                    }
+                }
+            },
+
             async addEvent(eventData) {
                 try {
-                    await db.collection('events').add(eventData);
+                    await addEvent(eventData);
                     utils.showSuccess('Evento adicionado com sucesso!');
                     this.loadEvents();
                 } catch (error) {
@@ -307,11 +375,7 @@
 
             async loadEvents() {
                 try {
-                    const querySnapshot = await db.collection('events').get();
-                    const events = [];
-                    querySnapshot.forEach(doc => {
-                        events.push({ id: doc.id, ...doc.data() });
-                    });
+                    const events = await getEvents();
                     this.renderEvents(events);
                 } catch (error) {
                     utils.showError('Erro ao carregar eventos: ' + error.message);
@@ -338,11 +402,59 @@
             async deleteEvent(eventId) {
                 if (confirm('Tem certeza que deseja excluir este evento?')) {
                     try {
-                        await db.collection('events').doc(eventId).delete();
+                        await deleteEvent(eventId);
                         utils.showSuccess('Evento excluído com sucesso!');
                         this.loadEvents();
                     } catch (error) {
                         utils.showError('Erro ao excluir evento: ' + error.message);
+                    }
+                }
+            },
+
+            async addRehearsal(rehearsalData) {
+                try {
+                    await addRehearsal(rehearsalData);
+                    utils.showSuccess('Ensaio adicionado com sucesso!');
+                    this.loadRehearsals();
+                } catch (error) {
+                    utils.showError('Erro ao adicionar ensaio: ' + error.message);
+                }
+            },
+
+            async loadRehearsals() {
+                try {
+                    const rehearsals = await getRehearsals();
+                    this.renderRehearsals(rehearsals);
+                } catch (error) {
+                    utils.showError('Erro ao carregar ensaios: ' + error.message);
+                }
+            },
+
+            renderRehearsals(rehearsals) {
+                const html = rehearsals.map(rehearsal => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">${rehearsal.title}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${state.categories.get(rehearsal.category)?.name || 'Sem categoria'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${utils.formatDate(rehearsal.date)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${rehearsal.time}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button onclick="dataManager.deleteRehearsal('${rehearsal.id}')" class="text-red-600 hover:text-red-900">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+                elements.lists.rehearsals.innerHTML = html;
+            },
+
+            async deleteRehearsal(rehearsalId) {
+                if (confirm('Tem certeza que deseja excluir este ensaio?')) {
+                    try {
+                        await deleteRehearsal(rehearsalId);
+                        utils.showSuccess('Ensaio excluído com sucesso!');
+                        this.loadRehearsals();
+                    } catch (error) {
+                        utils.showError('Erro ao excluir ensaio: ' + error.message);
                     }
                 }
             }
@@ -359,12 +471,14 @@
                 // Carrega dados iniciais
                 await dataManager.loadCategories();
                 await dataManager.loadEvents();
+                await dataManager.loadRehearsals();
 
                 // Configura eventos
                 elements.tabs.events.addEventListener('click', () => tabManager.switchTab('events'));
                 elements.tabs.rehearsals.addEventListener('click', () => tabManager.switchTab('rehearsals'));
                 elements.tabs.categories.addEventListener('click', () => tabManager.switchTab('categories'));
 
+                // Configurar formulário de eventos
                 elements.forms.event.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     const eventData = {
@@ -374,6 +488,31 @@
                         time: document.getElementById('eventTime').value
                     };
                     await dataManager.addEvent(eventData);
+                    e.target.reset();
+                });
+
+                // Configurar formulário de categorias
+                elements.forms.category.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const categoryData = {
+                        name: document.getElementById('categoryName').value,
+                        icon: document.getElementById('categoryIcon').value,
+                        createdAt: new Date()
+                    };
+                    await dataManager.addCategory(categoryData);
+                    e.target.reset();
+                });
+
+                // Configurar formulário de ensaios
+                elements.forms.rehearsal.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const rehearsalData = {
+                        title: document.getElementById('rehearsal-title').value,
+                        category: document.getElementById('rehearsal-category').value,
+                        date: document.getElementById('rehearsal-date').value,
+                        time: document.getElementById('rehearsal-time').value
+                    };
+                    await dataManager.addRehearsal(rehearsalData);
                     e.target.reset();
                 });
             } else {
@@ -396,6 +535,7 @@
                     document.getElementById('admin-area').classList.remove('hidden');
                     await dataManager.loadCategories();
                     await dataManager.loadEvents();
+                    await dataManager.loadRehearsals();
                 }
             } catch (error) {
                 console.error('Erro de login:', error);

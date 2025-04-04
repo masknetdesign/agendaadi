@@ -1,88 +1,64 @@
-# Agenda ADI
+# Agenda ADI - Sistema de Eventos da Igreja
 
-Sistema de gerenciamento de eventos e ensaios para a igreja ADI.
+Sistema web para gerenciamento de eventos e ensaios da igreja.
 
-## Configuração do Ambiente
+## Funcionalidades
+
+- Visualização de eventos e ensaios
+- Filtragem por categoria e dia da semana
+- Área administrativa para gerenciamento de conteúdo
+- Sistema de notificações em tempo real
+- Interface responsiva e moderna
+
+## Configuração
 
 1. Clone o repositório:
 ```bash
 git clone https://github.com/seu-usuario/agendaadi.git
+cd agendaadi
 ```
 
-2. Crie um arquivo `firebase-config.js` na raiz do projeto com suas credenciais do Firebase:
-```javascript
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+2. Configure as variáveis de ambiente:
+- Copie o arquivo `.env.example` para `.env`
+- Preencha as variáveis com suas credenciais do Firebase
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-    apiKey: "sua-api-key",
-    authDomain: "seu-auth-domain",
-    projectId: "seu-project-id",
-    storageBucket: "seu-storage-bucket",
-    messagingSenderId: "seu-messaging-sender-id",
-    appId: "seu-app-id"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-// Função para verificar autenticação
-async function checkAuth() {
-    return new Promise((resolve) => {
-        auth.onAuthStateChanged((user) => {
-            resolve(user);
-        });
-    });
-}
-
-// Função para login
-async function login(email, password) {
-    try {
-        const userCredential = await auth.signInWithEmailAndPassword(email, password);
-        return userCredential.user;
-    } catch (error) {
-        throw error;
-    }
-}
-
-// Função para logout
-async function logout() {
-    try {
-        await auth.signOut();
-    } catch (error) {
-        throw error;
-    }
-}
-
-export { db, auth, checkAuth, login, logout };
+```bash
+cp .env.example .env
 ```
 
 3. Configure o Firebase:
-   - Crie um projeto no [Firebase Console](https://console.firebase.google.com)
-   - Ative o Authentication e o Firestore
-   - Configure as regras de segurança do Firestore
-   - Crie um usuário administrador
+- Crie um projeto no [Firebase Console](https://console.firebase.google.com)
+- Ative o Firestore Database
+- Configure as regras de segurança do Firestore
+- Copie as credenciais do projeto para o arquivo `.env`
 
-4. Acesse a aplicação:
-   - Abra `index.html` para visualizar os eventos
-   - Acesse `admin.html` para gerenciar eventos (requer login)
+4. Implante no GitHub Pages:
+- Vá para Settings > Pages no seu repositório
+- Configure a branch main como source
+- O site estará disponível em `https://seu-usuario.github.io/agendaadi`
 
 ## Estrutura do Projeto
 
-- `index.html` - Página principal com visualização de eventos
+- `index.html` - Página principal para visualização de eventos
 - `admin.html` - Área administrativa
-- `firebase-config.js` - Configuração do Firebase (não versionado)
-- `firebase-config.example.js` - Exemplo de configuração
-- `styles/` - Arquivos CSS
-- `scripts/` - Arquivos JavaScript
+- `firebase-config.js` - Configuração do Firebase
+- `.env` - Variáveis de ambiente (não incluir no git)
+- `.env.example` - Exemplo de variáveis de ambiente
 
 ## Segurança
 
-- O arquivo `firebase-config.js` contém credenciais sensíveis e não deve ser compartilhado
-- Use o arquivo `firebase-config.example.js` como referência para configuração
-- Configure as regras de segurança do Firestore adequadamente 
+- Nunca compartilhe ou comite o arquivo `.env`
+- Configure adequadamente as regras de segurança do Firestore
+- Use autenticação para a área administrativa
+
+## Contribuição
+
+1. Faça um Fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Abra um Pull Request
+
+## Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes. 
