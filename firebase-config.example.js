@@ -6,21 +6,13 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth
 // Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyBkrBLKuklZgPm1nz2G997ULiYycZMb9F8",
-<<<<<<< HEAD
     authDomain: "avisoseeventos.firebaseapp.com",
+    databaseURL: "https://avisoseeventos-default-rtdb.firebaseio.com",
     projectId: "avisoseeventos",
     storageBucket: "avisoseeventos.appspot.com",
     messagingSenderId: "247706769451",
-    appId: "1:247706769451:web:ce31cd9d0ca22cd267b26e"
-=======
-      authDomain: "avisoseeventos.firebaseapp.com",
-      databaseURL: "https://avisoseeventos-default-rtdb.firebaseio.com",
-      projectId: "avisoseeventos",
-      storageBucket: "avisoseeventos.appspot.com",
-      messagingSenderId: "247706769451",
-      appId: "1:247706769451:web:ce31cd9d0ca22cd267b26e",
-      measurementId: "G-QE1Z4RQ60T"
->>>>>>> 90aeb0d0b549d3fe6306a3c9ca9b96003a91e7ae
+    appId: "1:247706769451:web:ce31cd9d0ca22cd267b26e",
+    measurementId: "G-QE1Z4RQ60T"
 };
 
 // Initialize Firebase
