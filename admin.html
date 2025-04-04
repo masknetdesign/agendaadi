@@ -7,14 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { firebaseConfig, db, auth, checkAuth, login, logout } from "./firebase-config.js";
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-
+        import { db, auth, checkAuth, login, logout } from './firebase-config.js';
+        
         // Torna as funções disponíveis globalmente
         window.db = db;
         window.auth = auth;
