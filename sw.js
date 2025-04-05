@@ -1,13 +1,15 @@
-const CACHE_NAME = 'agenda-adi-v1';
-const STATIC_CACHE = 'static-v1';
-const DYNAMIC_CACHE = 'dynamic-v1';
+const CACHE_NAME = 'agenda-adi-v2';
+const STATIC_CACHE = 'static-v2';
+const DYNAMIC_CACHE = 'dynamic-v2';
 
 const STATIC_RESOURCES = [
+    '.',
     './',
     './index.html',
     './admin.html',
     './firebase-config.js',
     './manifest.json',
+    './sw.js',
     './icons/icon-72x72.png',
     './icons/icon-96x96.png',
     './icons/icon-128x128.png',
@@ -27,30 +29,32 @@ const STATIC_RESOURCES = [
 self.addEventListener('install', event => {
     console.log('[Service Worker] Instalando...');
     event.waitUntil(
-        caches.open(STATIC_CACHE)
-            .then(cache => {
+        Promise.all([
+            caches.open(STATIC_CACHE).then(cache => {
                 console.log('[Service Worker] Pré-cacheando recursos estáticos');
                 return cache.addAll(STATIC_RESOURCES);
-            })
+            }),
+            self.skipWaiting()
+        ])
     );
-    self.skipWaiting();
 });
 
 // Ativação do Service Worker
 self.addEventListener('activate', event => {
     console.log('[Service Worker] Ativando...');
     event.waitUntil(
-        caches.keys()
-            .then(keyList => {
+        Promise.all([
+            caches.keys().then(keyList => {
                 return Promise.all(keyList.map(key => {
                     if (key !== STATIC_CACHE && key !== DYNAMIC_CACHE) {
                         console.log('[Service Worker] Removendo cache antigo:', key);
                         return caches.delete(key);
                     }
                 }));
-            })
+            }),
+            self.clients.claim()
+        ])
     );
-    return self.clients.claim();
 });
 
 // Interceptação de requisições
@@ -63,20 +67,24 @@ self.addEventListener('fetch', event => {
                     return response;
                 }
 
-                return fetch(event.request)
+                return fetch(event.request.clone())
                     .then(res => {
-                        // Armazena no cache dinâmico apenas recursos válidos e locais
-                        if (res.ok && (event.request.url.indexOf('http') === 0)) {
-                            return caches.open(DYNAMIC_CACHE)
-                                .then(cache => {
-                                    cache.put(event.request.url, res.clone());
-                                    return res;
-                                });
+                        // Não cachear respostas com erro
+                        if (!res || res.status !== 200 || res.type !== 'basic') {
+                            return res;
                         }
+
+                        // Armazena no cache dinâmico
+                        const responseToCache = res.clone();
+                        caches.open(DYNAMIC_CACHE)
+                            .then(cache => {
+                                cache.put(event.request, responseToCache);
+                            });
+
                         return res;
                     })
                     .catch(() => {
-                        // Retorna uma resposta offline personalizada se necessário
+                        // Retorna página offline para requisições HTML
                         if (event.request.headers.get('accept').includes('text/html')) {
                             return caches.match('./index.html');
                         }

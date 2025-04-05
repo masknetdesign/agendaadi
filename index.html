@@ -934,66 +934,96 @@
         const pwaInstallButton = document.getElementById('pwa-install-button');
         const pwaCloseButton = document.getElementById('pwa-close-button');
 
+        // Função para verificar se o app já está instalado
+        function isPWAInstalled() {
+            return (
+                window.matchMedia('(display-mode: standalone)').matches ||
+                window.navigator.standalone ||
+                document.referrer.includes('android-app://') ||
+                localStorage.getItem('pwaInstalled') === 'true'
+            );
+        }
+
         // Intercepta o evento 'beforeinstallprompt'
         window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('Evento beforeinstallprompt capturado');
             // Previne o comportamento padrão
             e.preventDefault();
             // Guarda o evento para uso posterior
             deferredPrompt = e;
             // Mostra o banner de instalação
-            showInstallBanner();
-        });
-
-        // Função para mostrar o banner de instalação
-        function showInstallBanner() {
-            if (!localStorage.getItem('pwaInstallDismissed')) {
+            if (!isPWAInstalled() && !localStorage.getItem('pwaInstallDismissed')) {
                 pwaInstallBanner.classList.add('show');
             }
-        }
+        });
 
         // Evento de clique no botão de instalação
         pwaInstallButton.addEventListener('click', async () => {
+            console.log('Botão de instalação clicado');
             if (deferredPrompt) {
-                // Mostra o prompt de instalação
-                deferredPrompt.prompt();
-                // Espera pela escolha do usuário
-                const { outcome } = await deferredPrompt.userChoice;
-                // Limpa o prompt guardado
-                deferredPrompt = null;
-                // Esconde o banner
-                pwaInstallBanner.classList.remove('show');
-                // Registra o resultado
-                console.log(`User ${outcome === 'accepted' ? 'aceitou' : 'recusou'} a instalação`);
+                try {
+                    // Mostra o prompt de instalação
+                    deferredPrompt.prompt();
+                    // Espera pela escolha do usuário
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`Usuário ${outcome === 'accepted' ? 'aceitou' : 'recusou'} a instalação`);
+                    
+                    if (outcome === 'accepted') {
+                        localStorage.setItem('pwaInstalled', 'true');
+                    }
+                    
+                    // Limpa o prompt guardado
+                    deferredPrompt = null;
+                    // Esconde o banner
+                    pwaInstallBanner.classList.remove('show');
+                } catch (error) {
+                    console.error('Erro ao tentar instalar o PWA:', error);
+                }
+            } else {
+                console.log('Nenhum prompt de instalação disponível');
             }
         });
 
         // Evento de clique no botão de fechar
         pwaCloseButton.addEventListener('click', () => {
             pwaInstallBanner.classList.remove('show');
-            // Guarda a preferência do usuário
             localStorage.setItem('pwaInstallDismissed', 'true');
         });
 
         // Verifica se o app já está instalado
-        window.addEventListener('appinstalled', () => {
-            // Esconde o banner quando o app for instalado
-            pwaInstallBanner.classList.remove('show');
+        window.addEventListener('appinstalled', (event) => {
             console.log('PWA instalado com sucesso');
+            localStorage.setItem('pwaInstalled', 'true');
+            pwaInstallBanner.classList.remove('show');
         });
 
-        // Função para verificar se está rodando como PWA
-        function isRunningAsPWA() {
-            return window.matchMedia('(display-mode: standalone)').matches || 
-                   window.navigator.standalone || 
-                   document.referrer.includes('android-app://');
+        // Verifica o modo de exibição ao carregar e quando muda
+        window.matchMedia('(display-mode: standalone)').addEventListener('change', (evt) => {
+            if (evt.matches) {
+                console.log('Aplicativo está sendo executado no modo standalone');
+                localStorage.setItem('pwaInstalled', 'true');
+            }
+        });
+
+        // Inicializa o PWA quando a página carregar
+        document.addEventListener('DOMContentLoaded', initPWA);
+
+        // Função para mostrar o banner de instalação
+        function showInstallBanner() {
+            if (!localStorage.getItem('pwaInstallDismissed') && deferredPrompt) {
+                console.log('Mostrando banner de instalação');
+                pwaInstallBanner.classList.add('show');
+            }
         }
 
-        // Se já estiver rodando como PWA, não mostra o banner
-        if (isRunningAsPWA()) {
-            console.log('Rodando como PWA');
-        } else {
-            // Tenta mostrar o banner imediatamente se possível
-            showInstallBanner();
+        // Inicialização do PWA
+        function initPWA() {
+            if (!isPWAInstalled()) {
+                console.log('PWA não está instalado, mostrando banner...');
+                showInstallBanner();
+            } else {
+                console.log('PWA já está instalado');
+            }
         }
     </script>
 </body>

@@ -2,10 +2,10 @@
     "name": "Agenda ADI",
     "short_name": "ADI",
     "description": "Agenda de eventos e ensaios da ADI",
-    "start_url": "./",
-    "scope": "./",
+    "start_url": ".",
+    "scope": ".",
     "display": "standalone",
-    "orientation": "any",
+    "orientation": "portrait",
     "background_color": "#ffffff",
     "theme_color": "#1a365d",
     "categories": ["productivity", "utilities"],
@@ -69,6 +69,18 @@
             "type": "image/png",
             "platform": "wide",
             "label": "Tela principal da Agenda ADI"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Ver Eventos",
+            "url": "/?view=events",
+            "icons": [{ "src": "./icons/icon-96x96.png", "sizes": "96x96" }]
+        },
+        {
+            "name": "Ver Ensaios",
+            "url": "/?view=rehearsals",
+            "icons": [{ "src": "./icons/icon-96x96.png", "sizes": "96x96" }]
         }
     ]
 } 
