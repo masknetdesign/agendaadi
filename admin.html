@@ -956,10 +956,29 @@
                 await dataManager.loadEvents();
                 await dataManager.loadRehearsals();
 
-                // Configura eventos
+                // Configura eventos das abas
                 elements.tabs.events.addEventListener('click', () => tabManager.switchTab('events'));
                 elements.tabs.rehearsals.addEventListener('click', () => tabManager.switchTab('rehearsals'));
                 elements.tabs.categories.addEventListener('click', () => tabManager.switchTab('categories'));
+
+                // Adiciona Event Listener para o botão de Logout
+                const logoutButton = document.getElementById('logout-button');
+                if (logoutButton) {
+                    logoutButton.addEventListener('click', async () => {
+                        try {
+                            await window.logout();
+                            console.log('Logout bem-sucedido.');
+                            // Esconde admin area e mostra login screen
+                            document.getElementById('admin-area').classList.add('hidden');
+                            document.getElementById('login-screen').classList.remove('hidden');
+                        } catch (error) {
+                            console.error('Erro ao fazer logout:', error);
+                            utils.showError('Erro ao fazer logout.');
+                        }
+                    });
+                } else {
+                    console.error('Botão de logout não encontrado.');
+                }
 
                 // Configurar formulário de eventos
                 elements.forms.event.addEventListener('submit', async (e) => {
