@@ -1,23 +1,22 @@
-const CACHE_NAME = 'agenda-adi-v2';
-const STATIC_CACHE = 'static-v2';
-const DYNAMIC_CACHE = 'dynamic-v2';
+const CACHE_NAME = 'agenda-adi-v3';
+const STATIC_CACHE = 'static-v3';
+const DYNAMIC_CACHE = 'dynamic-v3';
 
 const STATIC_RESOURCES = [
-    '.',
-    './',
-    './index.html',
-    './admin.html',
-    './firebase-config.js',
-    './manifest.json',
-    './sw.js',
-    './icons/icon-72x72.png',
-    './icons/icon-96x96.png',
-    './icons/icon-128x128.png',
-    './icons/icon-144x144.png',
-    './icons/icon-152x152.png',
-    './icons/icon-192x192.png',
-    './icons/icon-384x384.png',
-    './icons/icon-512x512.png',
+    '/',
+    '/index.html',
+    '/admin.html',
+    '/firebase-config.js',
+    '/manifest.json',
+    '/sw.js',
+    '/icons/icon-72x72.png',
+    '/icons/icon-96x96.png',
+    '/icons/icon-128x128.png',
+    '/icons/icon-144x144.png',
+    '/icons/icon-152x152.png',
+    '/icons/icon-192x192.png',
+    '/icons/icon-384x384.png',
+    '/icons/icon-512x512.png',
     'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js',
     'https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js',
     'https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js',
@@ -70,7 +69,7 @@ self.addEventListener('fetch', event => {
                 return fetch(event.request.clone())
                     .then(res => {
                         // Não cachear respostas com erro
-                        if (!res || res.status !== 200 || res.type !== 'basic') {
+                        if (!res || res.status !== 200) {
                             return res;
                         }
 
@@ -86,7 +85,7 @@ self.addEventListener('fetch', event => {
                     .catch(() => {
                         // Retorna página offline para requisições HTML
                         if (event.request.headers.get('accept').includes('text/html')) {
-                            return caches.match('./index.html');
+                            return caches.match('/index.html');
                         }
                     });
             })

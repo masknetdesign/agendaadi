@@ -2,8 +2,8 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda de Eventos da Igreja</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agenda ADI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
@@ -371,10 +371,10 @@
     <meta name="application-name" content="Agenda ADI">
     
     <!-- PWA Links -->
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="./icons/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512x512.png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="container">
@@ -915,20 +915,7 @@
             }
         });
 
-        // PWA Registration Script
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registrado com sucesso:', registration);
-                    })
-                    .catch(error => {
-                        console.log('Falha ao registrar o Service Worker:', error);
-                    });
-            });
-        }
-
-        // Variáveis para instalação do PWA
+        // PWA Installation
         let deferredPrompt;
         const pwaInstallBanner = document.getElementById('pwa-install-banner');
         const pwaInstallButton = document.getElementById('pwa-install-button');
@@ -947,24 +934,25 @@
         // Intercepta o evento 'beforeinstallprompt'
         window.addEventListener('beforeinstallprompt', (e) => {
             console.log('Evento beforeinstallprompt capturado');
-            // Previne o comportamento padrão
             e.preventDefault();
-            // Guarda o evento para uso posterior
             deferredPrompt = e;
-            // Mostra o banner de instalação
+            showInstallPrompt();
+        });
+
+        // Função para mostrar o prompt de instalação
+        function showInstallPrompt() {
             if (!isPWAInstalled() && !localStorage.getItem('pwaInstallDismissed')) {
+                console.log('Mostrando banner de instalação');
                 pwaInstallBanner.classList.add('show');
             }
-        });
+        }
 
         // Evento de clique no botão de instalação
         pwaInstallButton.addEventListener('click', async () => {
             console.log('Botão de instalação clicado');
             if (deferredPrompt) {
                 try {
-                    // Mostra o prompt de instalação
                     deferredPrompt.prompt();
-                    // Espera pela escolha do usuário
                     const { outcome } = await deferredPrompt.userChoice;
                     console.log(`Usuário ${outcome === 'accepted' ? 'aceitou' : 'recusou'} a instalação`);
                     
@@ -972,9 +960,7 @@
                         localStorage.setItem('pwaInstalled', 'true');
                     }
                     
-                    // Limpa o prompt guardado
                     deferredPrompt = null;
-                    // Esconde o banner
                     pwaInstallBanner.classList.remove('show');
                 } catch (error) {
                     console.error('Erro ao tentar instalar o PWA:', error);
@@ -997,34 +983,31 @@
             pwaInstallBanner.classList.remove('show');
         });
 
-        // Verifica o modo de exibição ao carregar e quando muda
-        window.matchMedia('(display-mode: standalone)').addEventListener('change', (evt) => {
-            if (evt.matches) {
-                console.log('Aplicativo está sendo executado no modo standalone');
-                localStorage.setItem('pwaInstalled', 'true');
-            }
-        });
-
-        // Inicializa o PWA quando a página carregar
-        document.addEventListener('DOMContentLoaded', initPWA);
-
-        // Função para mostrar o banner de instalação
-        function showInstallBanner() {
-            if (!localStorage.getItem('pwaInstallDismissed') && deferredPrompt) {
-                console.log('Mostrando banner de instalação');
-                pwaInstallBanner.classList.add('show');
-            }
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('/sw.js', {
+                        scope: '/'
+                    });
+                    console.log('Service Worker registrado com sucesso:', registration);
+                    
+                    // Mostrar prompt de instalação após o registro do Service Worker
+                    if (!isPWAInstalled()) {
+                        showInstallPrompt();
+                    }
+                } catch (error) {
+                    console.error('Erro ao registrar Service Worker:', error);
+                }
+            });
         }
 
         // Inicialização do PWA
-        function initPWA() {
+        document.addEventListener('DOMContentLoaded', () => {
             if (!isPWAInstalled()) {
-                console.log('PWA não está instalado, mostrando banner...');
-                showInstallBanner();
-            } else {
-                console.log('PWA já está instalado');
+                showInstallPrompt();
             }
-        }
+        });
     </script>
 </body>
 </html>
