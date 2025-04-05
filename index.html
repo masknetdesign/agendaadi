@@ -362,6 +362,110 @@
             border-radius: 0.375rem;
             transition: opacity 0.2s;
         }
+
+        /* Estilos do banner de instalação */
+        .install-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 1000;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .install-banner.show {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .install-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .install-banner-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+        }
+
+        .install-banner-text {
+            flex: 1;
+        }
+
+        .install-banner-title {
+            font-weight: 600;
+            color: #1a365d;
+            margin-bottom: 0.25rem;
+        }
+
+        .install-banner-description {
+            font-size: 0.875rem;
+            color: #4a5568;
+        }
+
+        .install-banner-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-install {
+            background: #1a365d;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-install:hover {
+            background: #2c5282;
+        }
+
+        .btn-later {
+            color: #4a5568;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-later:hover {
+            background: #f1f5f9;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        @media (max-width: 640px) {
+            .install-banner {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .install-banner-content {
+                flex-direction: column;
+            }
+
+            .install-banner-buttons {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .btn-install, .btn-later {
+                width: 100%;
+                text-align: center;
+            }
+        }
     </style>
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1a365d">
@@ -464,21 +568,20 @@
     </audio>
 
     <!-- Banner de instalação do PWA -->
-    <div id="pwa-install-banner" class="items-center justify-between">
-        <div class="flex items-center">
-            <img src="/agendaadi/icons/icon-192x192.png" alt="Agenda ADI" class="w-10 h-10 mr-3 rounded-lg">
-            <div>
-                <h3 class="font-semibold">Instalar Agenda ADI</h3>
-                <p class="text-sm opacity-90">Instale o app para acesso rápido</p>
+    <div id="install-banner" class="install-banner">
+        <div class="install-banner-content">
+            <img src="/agendaadi/icons/icon-192x192.png" alt="Agenda ADI" class="install-banner-icon">
+            <div class="install-banner-text">
+                <div class="install-banner-title">Instale a Agenda ADI</div>
+                <div class="install-banner-description">Acesse a agenda diretamente do seu dispositivo</div>
             </div>
         </div>
-        <div class="flex items-center gap-3">
-            <button id="pwa-install-button" class="install-button">
+        <div class="install-banner-buttons">
+            <button id="install-button" class="btn-install">
+                <i class="fas fa-download mr-2"></i>
                 Instalar
             </button>
-            <button id="pwa-close-button" class="text-white opacity-80 hover:opacity-100">
-                <i class="fas fa-times"></i>
-            </button>
+            <button id="install-later" class="btn-later">Depois</button>
         </div>
     </div>
 
@@ -917,101 +1020,112 @@
             }
         });
 
-        // PWA Installation
-        let deferredPrompt;
-        const pwaInstallBanner = document.getElementById('pwa-install-banner');
-        const pwaInstallButton = document.getElementById('pwa-install-button');
-        const pwaCloseButton = document.getElementById('pwa-close-button');
-
-        // Função para verificar se o app já está instalado
-        function isPWAInstalled() {
-            return (
-                window.matchMedia('(display-mode: standalone)').matches ||
-                window.navigator.standalone ||
-                document.referrer.includes('android-app://') ||
-                localStorage.getItem('pwaInstalled') === 'true'
-            );
-        }
-
-        // Intercepta o evento 'beforeinstallprompt'
-        window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('Evento beforeinstallprompt capturado');
-            e.preventDefault();
-            deferredPrompt = e;
-            showInstallPrompt();
-        });
-
-        // Função para mostrar o prompt de instalação
-        function showInstallPrompt() {
-            if (!isPWAInstalled() && !localStorage.getItem('pwaInstallDismissed')) {
-                console.log('Mostrando banner de instalação');
-                pwaInstallBanner.classList.add('show');
-            }
-        }
-
-        // Evento de clique no botão de instalação
-        pwaInstallButton.addEventListener('click', async () => {
-            console.log('Botão de instalação clicado');
-            if (deferredPrompt) {
-                try {
-                    await deferredPrompt.prompt();
-                    const choiceResult = await deferredPrompt.userChoice;
-                    console.log('Resultado da escolha:', choiceResult.outcome);
-                    
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('Usuário aceitou a instalação');
-                        localStorage.setItem('pwaInstalled', 'true');
-                    } else {
-                        console.log('Usuário recusou a instalação');
-                    }
-                    
-                    deferredPrompt = null;
-                    pwaInstallBanner.classList.remove('show');
-                } catch (error) {
-                    console.error('Erro ao tentar instalar o PWA:', error);
-                }
-            } else {
-                console.log('Nenhum prompt de instalação disponível');
-            }
-        });
-
-        // Evento de clique no botão de fechar
-        pwaCloseButton.addEventListener('click', () => {
-            pwaInstallBanner.classList.remove('show');
-            localStorage.setItem('pwaInstallDismissed', 'true');
-        });
-
-        // Verifica se o app já está instalado
-        window.addEventListener('appinstalled', (event) => {
-            console.log('PWA instalado com sucesso');
-            localStorage.setItem('pwaInstalled', 'true');
-            pwaInstallBanner.classList.remove('show');
-        });
-
-        // Service Worker Registration
+        // Service Worker Registration (moved here for consistency)
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', async () => {
-                try {
-                    const registration = await navigator.serviceWorker.register('/agendaadi/sw.js', {
-                        scope: '/agendaadi/'
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/agendaadi/sw.js', { scope: '/agendaadi/' })
+                    .then(registration => {
+                        console.log('Service Worker registrado com sucesso:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Falha ao registrar o Service Worker:', error);
                     });
-                    console.log('Service Worker registrado com sucesso:', registration);
-                    
-                    // Mostrar prompt de instalação após o registro do Service Worker
-                    if (!isPWAInstalled()) {
-                        showInstallPrompt();
-                    }
-                } catch (error) {
-                    console.error('Erro ao registrar Service Worker:', error);
-                }
             });
         }
 
-        // Inicialização do PWA
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!isPWAInstalled()) {
-                showInstallPrompt();
+        // Variáveis para instalação do PWA
+        let deferredPrompt;
+        const installBanner = document.getElementById('install-banner');
+        const installButton = document.getElementById('install-button');
+        const installLater = document.getElementById('install-later');
+
+        // Evento para capturar o prompt de instalação
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('Capturado evento beforeinstallprompt');
+            e.preventDefault();
+            deferredPrompt = e;
+            checkInstallBanner(); // Check if banner should be shown now
+        });
+
+        // Evento de clique no botão de instalação
+        installButton.addEventListener('click', async () => {
+            console.log('Clicou no botão de instalação');
+            if (!deferredPrompt) {
+                console.log('Nenhum prompt de instalação disponível');
+                return;
             }
+
+            try {
+                const result = await deferredPrompt.prompt();
+                console.log('Resultado do prompt:', result);
+                if (result.outcome === 'accepted') {
+                    console.log('Usuário aceitou a instalação');
+                } else {
+                    console.log('Usuário recusou a instalação');
+                }
+                deferredPrompt = null;
+                installBanner.classList.remove('show');
+            } catch (error) {
+                console.error('Erro ao mostrar prompt de instalação:', error);
+            }
+        });
+
+        // Evento de clique no botão "Depois"
+        installLater.addEventListener('click', () => {
+            console.log('Instalação adiada pelo usuário');
+            installBanner.classList.remove('show');
+            // Salva a preferência do usuário para não mostrar o banner por 7 dias
+            const nextPrompt = new Date();
+            nextPrompt.setDate(nextPrompt.getDate() + 7);
+            localStorage.setItem('nextInstallPrompt', nextPrompt.toISOString());
+        });
+
+        // Verifica se o app já está instalado
+        window.addEventListener('appinstalled', (e) => {
+            console.log('Aplicativo instalado com sucesso');
+            installBanner.classList.remove('show');
+            deferredPrompt = null;
+        });
+
+        // Função para verificar se deve mostrar o banner
+        function checkInstallBanner() {
+            // Don't show banner if already installed
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                console.log('Aplicativo já está instalado (standalone)');
+                installBanner.classList.remove('show');
+                return;
+            }
+            if (window.navigator.standalone === true) {
+                console.log('Aplicativo já está instalado (iOS)');
+                installBanner.classList.remove('show');
+                return;
+            }
+
+            const nextPrompt = localStorage.getItem('nextInstallPrompt');
+            if (nextPrompt) {
+                const now = new Date();
+                const promptDate = new Date(nextPrompt);
+                if (now < promptDate) {
+                    console.log('Banner adiado até:', promptDate);
+                    installBanner.classList.remove('show');
+                    return;
+                }
+            }
+
+            // Se houver um prompt e não estivermos adiados, mostra o banner
+            if (deferredPrompt) {
+                console.log('Mostrando banner de instalação');
+                installBanner.classList.add('show');
+            } else {
+                 console.log('Nenhum prompt de instalação disponível no momento para mostrar o banner.');
+                 installBanner.classList.remove('show');
+            }
+        }
+
+        // Verifica o banner ao carregar a página
+        document.addEventListener('DOMContentLoaded', () => {
+            // A verificação inicial do banner agora depende do 'beforeinstallprompt'
+            // para garantir que temos o deferredPrompt
         });
     </script>
 </body>
