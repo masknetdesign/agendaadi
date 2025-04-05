@@ -1,20 +1,20 @@
-const CACHE_NAME = 'agenda-adi-v5';
-const STATIC_CACHE = 'static-v5';
-const DYNAMIC_CACHE = 'dynamic-v5';
+const CACHE_NAME = 'agenda-adi-v6';
+const STATIC_CACHE = 'static-v6';
+const DYNAMIC_CACHE = 'dynamic-v6';
 
 const STATIC_RESOURCES = [
-    './',
-    './index.html',
-    './manifest.json',
-    './sw.js',
-    './icons/icon-72x72.png',
-    './icons/icon-96x96.png',
-    './icons/icon-128x128.png',
-    './icons/icon-144x144.png',
-    './icons/icon-152x152.png',
-    './icons/icon-192x192.png',
-    './icons/icon-384x384.png',
-    './icons/icon-512x512.png',
+    '/agendaadi/',
+    '/agendaadi/index.html',
+    '/agendaadi/manifest.json',
+    '/agendaadi/sw.js',
+    '/agendaadi/icons/icon-72x72.png',
+    '/agendaadi/icons/icon-96x96.png',
+    '/agendaadi/icons/icon-128x128.png',
+    '/agendaadi/icons/icon-144x144.png',
+    '/agendaadi/icons/icon-152x152.png',
+    '/agendaadi/icons/icon-192x192.png',
+    '/agendaadi/icons/icon-384x384.png',
+    '/agendaadi/icons/icon-512x512.png',
     'https://cdn.tailwindcss.com',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
     'https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js',
@@ -102,7 +102,7 @@ self.addEventListener('fetch', (event) => {
                         console.error('[Service Worker] Erro ao buscar recurso:', error);
                         // Se for uma requisição de página HTML, retorne a página offline
                         if (event.request.headers.get('accept').includes('text/html')) {
-                            return caches.match('./index.html');
+                            return caches.match('/agendaadi/index.html');
                         }
                         // Retornar uma resposta de erro personalizada
                         return new Response('Erro de rede', {
