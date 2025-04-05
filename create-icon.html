@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gerar Ícone</title>
+</head>
+<body>
+    <canvas id="iconCanvas" width="512" height="512"></canvas>
+    <script>
+        const canvas = document.getElementById('iconCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Fundo gradiente
+        const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+        gradient.addColorStop(0, '#1a365d');
+        gradient.addColorStop(1, '#2c5282');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Desenhar círculo central
+        ctx.beginPath();
+        ctx.arc(256, 256, 200, 0, Math.PI * 2);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+
+        // Texto "ADI"
+        ctx.font = 'bold 120px Arial';
+        ctx.fillStyle = '#1a365d';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('ADI', 256, 256);
+
+        // Converter para PNG
+        const link = document.createElement('a');
+        link.download = 'icon.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    </script>
+</body>
+</html> 
