@@ -61,6 +61,112 @@
                 });
             });
         };
+
+        // Funções do Firestore
+        window.getCategories = async () => {
+            try {
+                const categoriesRef = db.collection('categories');
+                const snapshot = await categoriesRef.get();
+                return snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+            } catch (error) {
+                console.error('Erro ao carregar categorias:', error);
+                throw error;
+            }
+        };
+
+        window.addCategory = async (categoryData) => {
+            try {
+                const categoriesRef = db.collection('categories');
+                const docRef = await categoriesRef.add(categoryData);
+                return docRef.id;
+            } catch (error) {
+                console.error('Erro ao adicionar categoria:', error);
+                throw error;
+            }
+        };
+
+        window.deleteCategory = async (categoryId) => {
+            try {
+                const categoryRef = db.collection('categories').doc(categoryId);
+                await categoryRef.delete();
+            } catch (error) {
+                console.error('Erro ao deletar categoria:', error);
+                throw error;
+            }
+        };
+
+        window.getEvents = async () => {
+            try {
+                const eventsRef = db.collection('events');
+                const snapshot = await eventsRef.get();
+                return snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+            } catch (error) {
+                console.error('Erro ao carregar eventos:', error);
+                throw error;
+            }
+        };
+
+        window.addEvent = async (eventData) => {
+            try {
+                const eventsRef = db.collection('events');
+                const docRef = await eventsRef.add(eventData);
+                return docRef.id;
+            } catch (error) {
+                console.error('Erro ao adicionar evento:', error);
+                throw error;
+            }
+        };
+
+        window.deleteEvent = async (eventId) => {
+            try {
+                const eventRef = db.collection('events').doc(eventId);
+                await eventRef.delete();
+            } catch (error) {
+                console.error('Erro ao deletar evento:', error);
+                throw error;
+            }
+        };
+
+        window.getRehearsals = async () => {
+            try {
+                const rehearsalsRef = db.collection('rehearsals');
+                const snapshot = await rehearsalsRef.get();
+                return snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+            } catch (error) {
+                console.error('Erro ao carregar ensaios:', error);
+                throw error;
+            }
+        };
+
+        window.addRehearsal = async (rehearsalData) => {
+            try {
+                const rehearsalsRef = db.collection('rehearsals');
+                const docRef = await rehearsalsRef.add(rehearsalData);
+                return docRef.id;
+            } catch (error) {
+                console.error('Erro ao adicionar ensaio:', error);
+                throw error;
+            }
+        };
+
+        window.deleteRehearsal = async (rehearsalId) => {
+            try {
+                const rehearsalRef = db.collection('rehearsals').doc(rehearsalId);
+                await rehearsalRef.delete();
+            } catch (error) {
+                console.error('Erro ao deletar ensaio:', error);
+                throw error;
+            }
+        };
     </script>
 </head>
 <body class="bg-gray-50">
