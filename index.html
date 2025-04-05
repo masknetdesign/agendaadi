@@ -329,10 +329,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Agenda ADI">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Agenda ADI">
     
     <!-- PWA Links -->
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512x512.png">
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="container">
@@ -607,8 +611,8 @@
             // Filtra por dia se necessário
             if (state.currentDay !== 'all') {
                 items = items.filter(item => {
-                    const itemDay = utils.getDayName(item.date);
-                    return itemDay === state.currentDay;
+                    const date = new Date(item.date + 'T00:00:00');
+                    return date.getDay().toString() === state.currentDay;
                 });
             }
 
