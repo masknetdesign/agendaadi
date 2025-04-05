@@ -1019,9 +1019,10 @@
         const installLater = document.getElementById('install-later');
 
         function showInstallBanner() {
+            console.log('[PWA Check] Verificando condições para mostrar banner...');
             // Não mostrar se já instalado
             if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-                console.log('PWA já instalado, não mostrando banner.');
+                console.log('[PWA Check] Resultado: Já instalado (standalone ou iOS). Banner NÃO será mostrado.');
                 installBanner.classList.remove('show');
                 return;
             }
@@ -1031,62 +1032,67 @@
                 const now = new Date();
                 const promptDate = new Date(nextPrompt);
                 if (now < promptDate) {
-                    console.log('Banner PWA adiado até:', promptDate);
+                    console.log(`[PWA Check] Resultado: Adiado até ${promptDate.toISOString()}. Banner NÃO será mostrado.`);
                     installBanner.classList.remove('show');
                     return;
                 }
+                console.log('[PWA Check] Período de adiamento expirou.');
             }
             // Mostrar apenas se o prompt estiver disponível
             if (deferredPrompt) {
-                console.log('Mostrando banner de instalação PWA.');
+                console.log('[PWA Check] Resultado: Prompt disponível e não adiado/instalado. MOSTRANDO banner.');
                 installBanner.classList.add('show');
             } else {
-                console.log('Nenhum prompt de instalação disponível para mostrar banner.');
+                console.log('[PWA Check] Resultado: Prompt NÃO disponível. Banner NÃO será mostrado.');
                 installBanner.classList.remove('show');
             }
         }
 
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('Capturado evento beforeinstallprompt.');
+            console.log('[PWA Event] Evento beforeinstallprompt CAPTURADO!');
             // Previne o mini-infobar em alguns navegadores
             e.preventDefault();
             // Guarda o evento para poder ser disparado depois
             deferredPrompt = e;
             // Verifica se o banner deve ser mostrado agora que temos o prompt
-            console.log('Chamando showInstallBanner de beforeinstallprompt.');
+            console.log('[PWA Event] Chamando showInstallBanner após capturar beforeinstallprompt.');
             showInstallBanner(); 
         });
 
         installButton.addEventListener('click', async () => {
+            console.log('[PWA Action] Botão Instalar clicado.');
             if (!deferredPrompt) {
-                console.log('Botão de instalar clicado, mas nenhum prompt disponível.');
+                console.log('[PWA Action] Nenhum prompt disponível para disparar.');
                 return;
             }
-            console.log('Disparando prompt de instalação PWA...');
+            console.log('[PWA Action] Disparando prompt de instalação nativo...');
             installBanner.classList.remove('show'); // Esconde o banner personalizado
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
-            console.log(`Resultado da escolha do usuário: ${outcome}`);
+            console.log(`[PWA Action] Resultado da escolha do usuário: ${outcome}`);
             if (outcome === 'accepted') {
-                 console.log('Usuário aceitou instalar o PWA');
+                 console.log('[PWA Action] Usuário ACEITOU instalar.');
             } else {
-                 console.log('Usuário recusou instalar o PWA');
+                 console.log('[PWA Action] Usuário RECUSOU instalar.');
             }
             // Não podemos usar o mesmo prompt novamente
             deferredPrompt = null;
+            console.log('[PWA Action] Prompt descartado.');
         });
 
         installLater.addEventListener('click', () => {
-            console.log('Usuário clicou em "Depois" no banner PWA.');
+            console.log('[PWA Action] Botão "Depois" clicado.');
             installBanner.classList.remove('show');
             const nextPrompt = new Date();
             nextPrompt.setDate(nextPrompt.getDate() + 7); // Adia por 7 dias
             localStorage.setItem('nextInstallPrompt', nextPrompt.toISOString());
+            console.log(`[PWA Action] Próximo prompt adiado para ${nextPrompt.toISOString()}.`);
             deferredPrompt = null; // Descarta o prompt atual
+            console.log('[PWA Action] Prompt descartado.');
         });
 
         window.addEventListener('appinstalled', () => {
-            console.log('PWA foi instalado.');
+            console.log('[PWA Event] Evento appinstalled disparado! App foi instalado.');
             // Limpa o prompt e esconde o banner se ainda estiver visível
             deferredPrompt = null;
             installBanner.classList.remove('show');
@@ -1107,7 +1113,7 @@
         
         // Verifica ao carregar a página se o banner deve ser mostrado
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOMContentLoaded: Verificando estado do banner PWA.');
+            console.log('[PWA Init] DOMContentLoaded: Iniciando verificação do estado do banner.');
             showInstallBanner();
         });
         // --- Fim Lógica PWA Refatorada ---
