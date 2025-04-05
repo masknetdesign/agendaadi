@@ -119,6 +119,22 @@
             padding: 0.5rem;
             margin-bottom: 2rem;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .category-tabs-scroll {
+            display: flex;
+            flex-wrap: nowrap;
+            padding-bottom: 0.5rem;
+        }
+
+        #category-tabs {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 0.5rem;
+            padding: 0.25rem;
+            min-width: min-content;
         }
 
         .category-tab {
@@ -126,7 +142,14 @@
             font-weight: 500;
             transition: all 0.3s ease;
             border-radius: 0.5rem;
-            margin: 0 0.25rem;
+            white-space: nowrap;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: max-content;
+            background: #f8f9fa;
         }
 
         .category-tab:hover {
@@ -137,6 +160,30 @@
             background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
             color: white;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-tab i {
+            font-size: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .category-tabs-container {
+                margin: 0 -1rem 1rem -1rem;
+                border-radius: 0;
+            }
+
+            .category-tabs-scroll {
+                padding: 0.25rem;
+            }
+
+            .category-tab {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.813rem;
+            }
+
+            .category-tab i {
+                font-size: 0.875rem;
+            }
         }
 
         /* Estilos para os cards de evento */
@@ -387,7 +434,20 @@
             },
             rehearsalsData: {
                 all: []
-            }
+            },
+            notificationCount: 0,
+            processedItems: new Set()
+        };
+
+        // Elementos DOM
+        const elements = {
+            notificationBell: document.getElementById('notification-bell'),
+            notificationCount: document.getElementById('notification-count'),
+            notificationPopup: document.getElementById('notification-popup'),
+            notificationOverlay: document.getElementById('notification-overlay'),
+            closePopupButton: document.getElementById('close-popup'),
+            eventsContainer: document.getElementById('events-container'),
+            categoryTabs: document.getElementById('category-tabs')
         };
 
         // Funções de utilidade
@@ -613,118 +673,175 @@
             renderCurrentView();
         });
 
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', async () => {
-            await loadCategories();
-            await loadEvents();
-            await loadRehearsals();
-            
-            // Configurar estado inicial
-            state.currentView = 'events';
-            document.getElementById('events-tab').classList.add('active-tab');
-            document.getElementById('rehearsals-tab').classList.remove('active-tab');
-        });
+        // Função para configurar listeners em tempo real
+        function setupRealtimeListeners() {
+            // Listener para novos eventos
+            db.collection('events')
+                .onSnapshot((snapshot) => {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === 'added') {
+                            const eventData = {
+                                id: change.doc.id,
+                                ...change.doc.data()
+                            };
 
-        // Variáveis para notificações
-        let notificationCount = 0;
-        let lastEventId = null;
-        let lastRehearsalId = null;
-        let processedEvents = new Set();
-        let processedRehearsals = new Set();
-        const notificationBell = document.getElementById('notification-bell');
-        const notificationCountElement = document.getElementById('notification-count');
-        const notificationPopup = document.getElementById('notification-popup');
-        const notificationOverlay = document.getElementById('notification-overlay');
-        const closePopupButton = document.getElementById('close-popup');
-        const bellSound = document.getElementById('bell-sound');
-        
-        // Função para reproduzir o som do sino
-        function playBellSound() {
-            console.log('Tentando reproduzir som do sino...');
+                            // Verificar se o evento foi criado nos últimos 30 segundos
+                            const createdAt = eventData.createdAt?.toDate() || new Date();
+                            const now = new Date();
+                            const timeDiff = (now - createdAt) / 1000; // diferença em segundos
+
+                            if (timeDiff <= 30 && !state.processedItems.has(eventData.id)) {
+                                state.processedItems.add(eventData.id);
+                                const enrichedEventData = {
+                                    ...eventData,
+                                    type: 'event',
+                                    categoryName: state.categories.get(eventData.category)?.name || 'Sem categoria',
+                                    categoryIcon: state.categories.get(eventData.category)?.icon || 'fa-calendar'
+                                };
+                                
+                                showNotification(enrichedEventData);
+                                loadEvents();
+                            }
+                        }
+                    });
+                }, (error) => {
+                    console.error("Erro ao observar eventos:", error);
+                });
+
+            // Listener para novos ensaios
+            db.collection('rehearsals')
+                .onSnapshot((snapshot) => {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === 'added') {
+                            const rehearsalData = {
+                                id: change.doc.id,
+                                ...change.doc.data()
+                            };
+
+                            // Verificar se o ensaio foi criado nos últimos 30 segundos
+                            const createdAt = rehearsalData.createdAt?.toDate() || new Date();
+                            const now = new Date();
+                            const timeDiff = (now - createdAt) / 1000; // diferença em segundos
+
+                            if (timeDiff <= 30 && !state.processedItems.has(rehearsalData.id)) {
+                                state.processedItems.add(rehearsalData.id);
+                                const enrichedRehearsalData = {
+                                    ...rehearsalData,
+                                    type: 'rehearsal',
+                                    categoryName: state.categories.get(rehearsalData.category)?.name || 'Sem categoria',
+                                    categoryIcon: state.categories.get(rehearsalData.category)?.icon || 'fa-music'
+                                };
+                                
+                                showNotification(enrichedRehearsalData);
+                                loadRehearsals();
+                            }
+                        }
+                    });
+                }, (error) => {
+                    console.error("Erro ao observar ensaios:", error);
+                });
+        }
+
+        // Função para mostrar notificação
+        function showNotification(item) {
+            console.log('Mostrando notificação para:', item); // Debug
+
+            // Incrementar contador de notificações
+            state.notificationCount++;
+            elements.notificationCount.textContent = state.notificationCount;
+            elements.notificationCount.classList.remove('hidden');
             
+            // Reproduzir som e animação
+            playBellSound();
+            
+            // Atualizar conteúdo do popup
+            document.getElementById('popup-title').textContent = item.title;
+            document.getElementById('popup-category').textContent = item.categoryName;
+            document.getElementById('popup-time').textContent = item.time;
+            document.getElementById('popup-date').textContent = utils.formatDate(item.date);
+            document.getElementById('popup-icon').className = `fas ${item.categoryIcon} mr-2 text-gray-500`;
+
+            // Mostrar popup
+            elements.notificationPopup.classList.add('show');
+            elements.notificationOverlay.classList.add('show');
+
+            // Configurar temporizador para fechar o popup após 5 segundos
+            setTimeout(() => {
+                elements.notificationPopup.classList.remove('show');
+                elements.notificationOverlay.classList.remove('show');
+            }, 5000);
+        }
+
+        // Função para reproduzir o som do sino
+        async function playBellSound() {
             try {
-                // Criar um contexto de áudio
+                console.log('Reproduzindo som do sino...'); // Debug
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Criar oscilador para o som do sino
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
                 
-                // Configurar o oscilador para simular um sino
                 oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // Nota A5
-                oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.1); // Nota A4
-                oscillator.frequency.setValueAtTime(220, audioContext.currentTime + 0.2); // Nota A3
+                oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Nota A4
                 
-                // Configurar o envelope do som
                 gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                gainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.1);
-                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+                gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.1);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
                 
-                // Conectar os nós
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
                 
-                // Iniciar e parar o som
                 oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.3);
+                oscillator.stop(audioContext.currentTime + 0.5);
                 
-                console.log('Som do sino reproduzido com sucesso');
+                // Animar o sino
+                elements.notificationBell.classList.add('ringing');
+                setTimeout(() => {
+                    elements.notificationBell.classList.remove('ringing');
+                }, 500);
+                
             } catch (error) {
                 console.error('Erro ao reproduzir som do sino:', error);
             }
         }
 
-        // Função para mostrar notificação
-        function showNotification(item, type) {
-            console.log('Mostrando notificação para:', item);
-            
-            // Verificar se o item já foi processado
-            const itemId = type === 'event' ? item.id : item.id;
-            if ((type === 'event' && processedEvents.has(itemId)) || 
-                (type === 'rehearsal' && processedRehearsals.has(itemId))) {
-                console.log('Item já processado, ignorando notificação');
-                return;
-            }
-
-            // Adicionar à lista de processados
-            if (type === 'event') {
-                processedEvents.add(itemId);
-            } else {
-                processedRehearsals.add(itemId);
-            }
-
-            notificationCount++;
-            notificationCountElement.textContent = notificationCount;
-            notificationCountElement.classList.remove('hidden');
-            
-            // Animar o sino
-            notificationBell.classList.add('ringing');
-            setTimeout(() => {
-                notificationBell.classList.remove('ringing');
-            }, 1000);
-
-            // Mostrar popup
-            document.getElementById('popup-title').textContent = item.title;
-            document.getElementById('popup-category').textContent = item.categoryName;
-            document.getElementById('popup-time').textContent = item.time;
-            document.getElementById('popup-date').textContent = utils.formatDate(item.date);
-            document.getElementById('popup-icon').className = `fas ${type === 'event' ? item.icon : 'fa-music'} mr-2 text-gray-500`;
-
-            notificationPopup.classList.add('show');
-            notificationOverlay.classList.add('show');
-
-            // Reproduzir som do sino
-            playBellSound();
-        }
-
-        // Event listeners para o popup
-        closePopupButton.addEventListener('click', () => {
-            notificationPopup.classList.remove('show');
-            notificationOverlay.classList.remove('show');
+        // Event listeners
+        elements.closePopupButton.addEventListener('click', () => {
+            elements.notificationPopup.classList.remove('show');
+            elements.notificationOverlay.classList.remove('show');
         });
 
-        notificationOverlay.addEventListener('click', () => {
-            notificationPopup.classList.remove('show');
-            notificationOverlay.classList.remove('show');
+        elements.notificationOverlay.addEventListener('click', () => {
+            elements.notificationPopup.classList.remove('show');
+            elements.notificationOverlay.classList.remove('show');
+        });
+
+        elements.notificationBell.addEventListener('click', () => {
+            // Resetar contador ao clicar no sino
+            state.notificationCount = 0;
+            elements.notificationCount.textContent = '0';
+            elements.notificationCount.classList.add('hidden');
+        });
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                console.log('Iniciando aplicação...'); // Debug
+                await loadCategories();
+                await Promise.all([loadEvents(), loadRehearsals()]);
+                
+                // Configurar estado inicial
+                state.currentView = 'events';
+                document.getElementById('events-tab').classList.add('active-tab');
+                document.getElementById('rehearsals-tab').classList.remove('active-tab');
+
+                // Configurar listeners em tempo real
+                setupRealtimeListeners();
+                console.log('Listeners configurados com sucesso'); // Debug
+            } catch (error) {
+                console.error('Erro na inicialização:', error);
+            }
         });
     </script>
 </body>
