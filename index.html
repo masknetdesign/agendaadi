@@ -325,40 +325,42 @@
 
         /* Estilos para o banner de instalação do PWA */
         #pwa-install-banner {
+            display: none;
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1a365d;
             color: white;
             padding: 1rem;
-            display: none;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             z-index: 1000;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
         }
 
         #pwa-install-banner.show {
             display: flex;
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
         }
 
         .install-button {
-            background: white;
-            color: #1a365d;
+            background-color: #4299e1;
+            color: white;
             padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
+            border-radius: 0.375rem;
             font-weight: 500;
-            transition: all 0.3s ease;
+            transition: background-color 0.2s;
         }
 
         .install-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: #3182ce;
+        }
+
+        #pwa-close-button {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: opacity 0.2s;
         }
     </style>
     <!-- PWA Meta Tags -->
@@ -371,10 +373,10 @@
     <meta name="application-name" content="Agenda ADI">
     
     <!-- PWA Links -->
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512x512.png">
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="container">
@@ -464,7 +466,7 @@
     <!-- Banner de instalação do PWA -->
     <div id="pwa-install-banner" class="items-center justify-between">
         <div class="flex items-center">
-            <img src="./icons/icon-192x192.png" alt="Agenda ADI" class="w-10 h-10 mr-3 rounded-lg">
+            <img src="icons/icon-192x192.png" alt="Agenda ADI" class="w-10 h-10 mr-3 rounded-lg">
             <div>
                 <h3 class="font-semibold">Instalar Agenda ADI</h3>
                 <p class="text-sm opacity-90">Instale o app para acesso rápido</p>
@@ -952,12 +954,15 @@
             console.log('Botão de instalação clicado');
             if (deferredPrompt) {
                 try {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    console.log(`Usuário ${outcome === 'accepted' ? 'aceitou' : 'recusou'} a instalação`);
+                    await deferredPrompt.prompt();
+                    const choiceResult = await deferredPrompt.userChoice;
+                    console.log('Resultado da escolha:', choiceResult.outcome);
                     
-                    if (outcome === 'accepted') {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('Usuário aceitou a instalação');
                         localStorage.setItem('pwaInstalled', 'true');
+                    } else {
+                        console.log('Usuário recusou a instalação');
                     }
                     
                     deferredPrompt = null;
@@ -987,9 +992,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', async () => {
                 try {
-                    const registration = await navigator.serviceWorker.register('/sw.js', {
-                        scope: '/'
-                    });
+                    const registration = await navigator.serviceWorker.register('sw.js');
                     console.log('Service Worker registrado com sucesso:', registration);
                     
                     // Mostrar prompt de instalação após o registro do Service Worker
